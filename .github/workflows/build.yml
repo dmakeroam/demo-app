@@ -94,7 +94,7 @@ jobs:
           [ -s combined.log ] || echo "no logs captured" > combined.log
 
       - name: Diagnose failure
-        uses: faultline-cli/faultline-action@0.1.0
+        uses: faultline-cli/action@0.2.0
         with:
           log: combined.log
           annotations: true
