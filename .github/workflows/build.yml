@@ -42,6 +42,10 @@ jobs:
   push:
     needs: [build]
     runs-on: ubuntu-latest
+    outputs:
+      image_uri: ${{ steps.ecr.outputs.registry }}/demo-app:${{ github.sha }}
+      registry: ${{ steps.ecr.outputs.registry }}
+
     steps:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -70,6 +74,35 @@ jobs:
         with:
           name: push-log
           path: push.log
+
+  update-gitops:
+    name: Update GitOps Repo
+    needs: [push]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout GitOps repo
+        uses: actions/checkout@v4
+        with:
+          repository: dmakeroam/lab2-eks-gitops
+          token: ${{ secrets.GITOPS_PAT }}
+
+      - name: Set up Kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Update image in kustomization.yaml
+        working-directory: config/hello-world
+        run: |
+          kustomize edit set image demo-app=${{ needs.push.outputs.image_uri }}
+
+      - name: Commit and push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add config/hello-world/kustomization.yaml
+          git diff --cached --quiet && echo "no changes" && exit 0
+          git commit -m "chore(gitops): update demo-app image to ${{ github.sha }}"
+          git push
 
   diagnose:
     needs: [build, push]
