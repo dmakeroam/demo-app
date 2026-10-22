@@ -90,7 +90,7 @@ jobs:
 
       - name: Merge logs
         run: |
-          cat build.log push.log > combined.log 2>/dev/null
+          { cat build.log 2>/dev/null; cat push.log 2>/dev/null; } > combined.log
           [ -s combined.log ] || echo "no logs captured" > combined.log
 
       - name: Diagnose failure
